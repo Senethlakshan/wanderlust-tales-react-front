@@ -46,13 +46,19 @@ const LoginPage = () => {
     setLoginLoading(true);
 
     try {
+      // Check if the user is using demo credentials
+      const isUsingDemoCredentials = 
+        loginData.email === demoUser.email && loginData.password === demoUser.password;
+
       await AuthAPI.login(loginData.email, loginData.password);
+      
       toast({
         title: "Login successful",
-        description: loginData.email === demoUser.email ? 
+        description: isUsingDemoCredentials ? 
           "Welcome to the TravelTales Demo! You can create posts, like content, and follow users." : 
           "Welcome back to TravelTales!",
       });
+      
       navigate("/");
     } catch (error: any) {
       toast({
@@ -111,11 +117,14 @@ const LoginPage = () => {
     }
   };
 
-  const handleDemoLogin = async () => {
+  const handleDemoLogin = () => {
     setLoginData({ email: demoUser.email, password: demoUser.password });
-    setTimeout(() => {
-      document.getElementById("login-form-submit")?.click();
-    }, 500);
+    
+    // Show a message to inform user about demo mode
+    toast({
+      title: "Demo credentials applied",
+      description: "You can now log in with the demo account credentials.",
+    });
   };
 
   return (
@@ -190,18 +199,16 @@ const LoginPage = () => {
                     )}
                   </Button>
 
-                  {!isDemoMode && (
-                    <div className="pt-2">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="w-full" 
-                        onClick={handleDemoLogin}
-                      >
-                        Try with Demo Account
-                      </Button>
-                    </div>
-                  )}
+                  <div className="pt-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={handleDemoLogin}
+                    >
+                      Try Demo Account
+                    </Button>
+                  </div>
                 </form>
               </Card>
             </TabsContent>

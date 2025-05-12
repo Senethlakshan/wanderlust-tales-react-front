@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -58,21 +57,6 @@ export const Navbar = () => {
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
-    }
-  };
-
-  const handleLoginDemo = async () => {
-    try {
-      await AuthAPI.demoLogin();
-      setIsAuthenticated(true);
-      setCurrentUser(AuthAPI.getCurrentUser());
-      toast({
-        title: "Demo Login",
-        description: "You're logged in as the demo user. Try creating a post!",
-      });
-      navigate("/");
-    } catch (error) {
-      console.error("Login error:", error);
     }
   };
 
@@ -190,9 +174,6 @@ export const Navbar = () => {
             </>
           ) : (
             <div className="hidden md:flex gap-2">
-              <Button variant="secondary" onClick={handleLoginDemo}>
-                Demo Login
-              </Button>
               <Button variant="ghost" asChild>
                 <Link to="/login">Login</Link>
               </Button>
@@ -234,9 +215,6 @@ export const Navbar = () => {
                 <Link to="/search" className="py-2 hover:text-primary transition-colors">Countries</Link>
                 {!isAuthenticated ? (
                   <>
-                    <button onClick={handleLoginDemo} className="text-left py-2 hover:text-primary transition-colors font-medium">
-                      Demo Login
-                    </button>
                     <Link to="/login" className="py-2 hover:text-primary transition-colors">Login</Link>
                     <Link to="/register" className="py-2 hover:text-primary transition-colors">Register</Link>
                   </>
