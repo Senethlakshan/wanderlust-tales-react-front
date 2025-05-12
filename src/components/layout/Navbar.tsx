@@ -63,12 +63,12 @@ export const Navbar = () => {
 
   const handleLoginDemo = async () => {
     try {
-      await AuthAPI.login("test@example.com", "Password123");
+      await AuthAPI.demoLogin();
       setIsAuthenticated(true);
       setCurrentUser(AuthAPI.getCurrentUser());
       toast({
-        title: "Logged in successfully",
-        description: "You're logged in as the demo user",
+        title: "Demo Login",
+        description: "You're logged in as the demo user. Try creating a post!",
       });
       navigate("/");
     } catch (error) {
@@ -164,6 +164,10 @@ export const Navbar = () => {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <div className="p-2 text-center border-b">
+                    <p className="font-medium">{currentUser?.name}</p>
+                    <p className="text-xs text-muted-foreground">@{currentUser?.username}</p>
+                  </div>
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="cursor-pointer">
                       <User className="mr-2 h-4 w-4" />
@@ -186,7 +190,7 @@ export const Navbar = () => {
             </>
           ) : (
             <div className="hidden md:flex gap-2">
-              <Button variant="ghost" onClick={handleLoginDemo}>
+              <Button variant="secondary" onClick={handleLoginDemo}>
                 Demo Login
               </Button>
               <Button variant="ghost" asChild>
@@ -230,7 +234,7 @@ export const Navbar = () => {
                 <Link to="/search" className="py-2 hover:text-primary transition-colors">Countries</Link>
                 {!isAuthenticated ? (
                   <>
-                    <button onClick={handleLoginDemo} className="text-left py-2 hover:text-primary transition-colors">
+                    <button onClick={handleLoginDemo} className="text-left py-2 hover:text-primary transition-colors font-medium">
                       Demo Login
                     </button>
                     <Link to="/login" className="py-2 hover:text-primary transition-colors">Login</Link>

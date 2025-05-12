@@ -1,3 +1,4 @@
+
 import axios from "axios";
 
 // API URL for the backend
@@ -405,7 +406,7 @@ export const CountryAPI = {
 export const AuthAPI = {
   login: async (email: string, password: string) => {
     try {
-      // For demo, check against hardcoded credentials
+      // Check if it's the demo login
       if (email === demoUser.email && password === demoUser.password) {
         // Create mock token
         const token = "demo-token-" + Date.now();
@@ -416,7 +417,17 @@ export const AuthAPI = {
         
         return { token, user: demoUser };
       } else {
-        throw new Error("Invalid credentials");
+        // If not demo, try to login with actual API
+        try {
+          const response = await api.post("/users/login", { email, password });
+          const { token, user } = response.data;
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          return { token, user };
+        } catch (apiError) {
+          console.error("API login error:", apiError);
+          throw new Error("Invalid credentials");
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -428,8 +439,15 @@ export const AuthAPI = {
     try {
       // For demo, just pretend registration was successful if it matches demo user
       if (email === demoUser.email && username === demoUser.username) {
+        return { success: true, message: "Registration successful (demo user)" };
+      } 
+      
+      // Try actual API registration
+      try {
+        const response = await api.post("/users/register", { username, email, password });
         return { success: true, message: "Registration successful" };
-      } else {
+      } catch (apiError) {
+        console.error("API registration error:", apiError);
         return { success: true, message: "Registration successful (demo)" };
       }
     } catch (error) {
@@ -440,7 +458,17 @@ export const AuthAPI = {
   
   logout: async () => {
     try {
-      // For demo, just remove the token
+      const token = localStorage.getItem("token");
+      if (token && !token.startsWith("demo-token")) {
+        // Only call API if it's not a demo token
+        try {
+          await api.post("/users/logout");
+        } catch (apiError) {
+          console.error("API logout error:", apiError);
+        }
+      }
+      
+      // Always clear local storage
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     } catch (error) {
@@ -456,12 +484,32 @@ export const AuthAPI = {
     if (userJson) {
       return JSON.parse(userJson);
     }
-    // For demo, return demo user if logged in
     return null;
   },
   
   isAuthenticated: () => {
     return !!localStorage.getItem("token");
+  },
+  
+  // New method for demo login
+  demoLogin: async () => {
+    return AuthAPI.login(demoUser.email, demoUser.password);
+  },
+  
+  updateProfile: async (userData: Partial<User>) => {
+    try {
+      // For demo user, just update localStorage
+      const currentUser = AuthAPI.getCurrentUser();
+      if (currentUser) {
+        const updatedUser = { ...currentUser, ...userData };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        return updatedUser;
+      }
+      throw new Error("User not found");
+    } catch (error) {
+      console.error("Update profile error:", error);
+      throw error;
+    }
   }
 };
 

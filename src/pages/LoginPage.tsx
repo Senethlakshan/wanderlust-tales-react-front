@@ -6,14 +6,17 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuthAPI } from "@/services/api";
+import { AuthAPI, demoUser } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { LogIn, UserPlus, Loader } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isDemoMode = searchParams.get("demo") === "true";
   
   // Check if user is already logged in
   useEffect(() => {
@@ -24,8 +27,8 @@ const LoginPage = () => {
 
   // Login state
   const [loginData, setLoginData] = useState({
-    email: "",
-    password: "",
+    email: isDemoMode ? demoUser.email : "",
+    password: isDemoMode ? demoUser.password : "",
   });
   const [loginLoading, setLoginLoading] = useState(false);
 
@@ -46,7 +49,9 @@ const LoginPage = () => {
       await AuthAPI.login(loginData.email, loginData.password);
       toast({
         title: "Login successful",
-        description: "Welcome back to TravelTales!",
+        description: loginData.email === demoUser.email ? 
+          "Welcome to the TravelTales Demo! You can create posts, like content, and follow users." : 
+          "Welcome back to TravelTales!",
       });
       navigate("/");
     } catch (error: any) {
@@ -106,6 +111,13 @@ const LoginPage = () => {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setLoginData({ email: demoUser.email, password: demoUser.password });
+    setTimeout(() => {
+      document.getElementById("login-form-submit")?.click();
+    }, 500);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -119,6 +131,13 @@ const LoginPage = () => {
             </p>
           </div>
 
+          {isDemoMode && (
+            <div className="bg-primary/10 p-4 rounded-lg mb-6 border border-primary/20">
+              <h3 className="font-semibold text-primary mb-1">Demo Mode Activated</h3>
+              <p className="text-sm">Login details have been pre-filled with demo credentials. Just click "Sign In" to proceed.</p>
+            </div>
+          )}
+
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login" id="login-tab">Login</TabsTrigger>
@@ -127,7 +146,7 @@ const LoginPage = () => {
             
             <TabsContent value="login">
               <Card className="p-6">
-                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <form onSubmit={handleLoginSubmit} id="login-form" className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -157,7 +176,7 @@ const LoginPage = () => {
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full" disabled={loginLoading}>
+                  <Button type="submit" id="login-form-submit" className="w-full" disabled={loginLoading}>
                     {loginLoading ? (
                       <>
                         <Loader className="mr-2 h-4 w-4 animate-spin" />
@@ -170,6 +189,19 @@ const LoginPage = () => {
                       </>
                     )}
                   </Button>
+
+                  {!isDemoMode && (
+                    <div className="pt-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        className="w-full" 
+                        onClick={handleDemoLogin}
+                      >
+                        Try with Demo Account
+                      </Button>
+                    </div>
+                  )}
                 </form>
               </Card>
             </TabsContent>
