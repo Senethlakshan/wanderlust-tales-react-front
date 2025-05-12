@@ -206,7 +206,7 @@ const LoginPage = () => {
                       className="w-full" 
                       onClick={handleDemoLogin}
                     >
-                      Try Demo Account
+                     If you not have an account ,register now
                     </Button>
                   </div>
                 </form>

@@ -65,7 +65,7 @@ const Index = () => {
             <Button size="lg" className="bg-white text-travel-primary hover:bg-white/90">
               <Link to="/search" className="flex items-center">Explore Stories</Link>
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/20">
+            <Button size="lg" variant="outline" className="border-white text-black hover:bg-white/20">
               <Link to="/register" className="flex items-center">Start Writing</Link>
             </Button>
           </div>
