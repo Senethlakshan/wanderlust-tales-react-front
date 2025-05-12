@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -11,16 +11,56 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Search, Globe, User } from "lucide-react";
+import { Search, Globe, User, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-
-// Temporary authentication state - will be replaced with actual auth later
-const isAuthenticated = false; // Change to true to see logged-in state
+import { AuthAPI } from "@/services/api";
+import { toast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Navbar = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = () => {
+      setIsAuthenticated(AuthAPI.isAuthenticated());
+      setCurrentUser(AuthAPI.getCurrentUser());
+    };
+    
+    checkAuth();
+    
+    // Add event listener to check auth status when storage changes
+    window.addEventListener('storage', checkAuth);
+    
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
+  
+  const handleLogout = async () => {
+    try {
+      await AuthAPI.logout();
+      setIsAuthenticated(false);
+      setCurrentUser(null);
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of TravelTales",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container flex h-16 items-center justify-between">
@@ -83,12 +123,27 @@ export const Navbar = () => {
           </Button>
           
           {isAuthenticated ? (
-            <Link to="/profile">
-              <Avatar className="cursor-pointer">
-                <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="cursor-pointer">
+                  <AvatarImage src={currentUser?.avatar || "https://github.com/shadcn.png"} alt={currentUser?.username || "User"} />
+                  <AvatarFallback>{currentUser?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <div className="hidden md:flex gap-2">
               <Button variant="ghost" asChild>
@@ -130,14 +185,22 @@ export const Navbar = () => {
                 <Link to="/" className="py-2 hover:text-primary transition-colors">Home</Link>
                 <Link to="/search" className="py-2 hover:text-primary transition-colors">Explore</Link>
                 <Link to="/search" className="py-2 hover:text-primary transition-colors">Countries</Link>
-                {!isAuthenticated && (
+                {!isAuthenticated ? (
                   <>
                     <Link to="/login" className="py-2 hover:text-primary transition-colors">Login</Link>
                     <Link to="/register" className="py-2 hover:text-primary transition-colors">Register</Link>
                   </>
-                )}
-                {isAuthenticated && (
-                  <Link to="/profile" className="py-2 hover:text-primary transition-colors">Profile</Link>
+                ) : (
+                  <>
+                    <Link to="/profile" className="py-2 hover:text-primary transition-colors">Profile</Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="py-2 text-left text-destructive hover:text-destructive/80 transition-colors flex items-center gap-2"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Logout
+                    </button>
+                  </>
                 )}
               </nav>
             </SheetContent>

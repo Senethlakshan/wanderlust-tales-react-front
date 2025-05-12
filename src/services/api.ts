@@ -1,7 +1,8 @@
+
 import axios from "axios";
 
-// We'll use a mock API URL for now, to be replaced with the actual backend URL
-const API_URL = "https://api.example.com";
+// API URL for the backend
+const API_URL = "http://localhost:3000/api";
 
 // Create an axios instance
 const api = axios.create({
@@ -34,6 +35,7 @@ api.interceptors.response.use(
     // Handle unauthorized errors (expired tokens, etc.)
     if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
       window.location.href = "/login";
     }
     return Promise.reject(error);
@@ -320,20 +322,54 @@ export const CountryAPI = {
 // API endpoints for Authentication
 export const AuthAPI = {
   login: async (email: string, password: string) => {
-    // Mock login
-    if (email === "user@example.com" && password === "password") {
-      const token = "mock-token-12345";
+    try {
+      const response = await api.post("/users/login", { email, password });
+      const { token, user } = response.data;
+      
+      // Store token and user info in localStorage
       localStorage.setItem("token", token);
-      return { token };
+      localStorage.setItem("user", JSON.stringify(user));
+      
+      return { token, user };
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
-    return Promise.reject(new Error("Invalid credentials"));
   },
+  
   register: async (username: string, email: string, password: string) => {
-    // Mock registration
-    return { success: true, message: "Registration successful" };
+    try {
+      const response = await api.post("/users/register", { username, email, password });
+      return response.data;
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
   },
-  logout: () => {
-    localStorage.removeItem("token");
+  
+  logout: async () => {
+    try {
+      await api.post("/users/logout");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still remove the token even if API call fails
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    }
+  },
+  
+  getCurrentUser: () => {
+    const userJson = localStorage.getItem("user");
+    if (userJson) {
+      return JSON.parse(userJson);
+    }
+    return null;
+  },
+  
+  isAuthenticated: () => {
+    return !!localStorage.getItem("token");
   }
 };
 

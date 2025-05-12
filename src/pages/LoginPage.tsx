@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -10,9 +10,18 @@ import { AuthAPI } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { LogIn, UserPlus, Loader } from "lucide-react";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  
+  // Check if user is already logged in
+  useEffect(() => {
+    if (AuthAPI.isAuthenticated()) {
+      navigate("/");
+    }
+  }, [navigate]);
+
   // Login state
   const [loginData, setLoginData] = useState({
     email: "",
@@ -40,10 +49,10 @@ const LoginPage = () => {
         description: "Welcome back to TravelTales!",
       });
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.response?.data?.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
       console.error("Login error:", error);
@@ -78,10 +87,17 @@ const LoginPage = () => {
       });
       // Switch to login tab
       document.getElementById("login-tab")?.click();
-    } catch (error) {
+      // Clear the registration form
+      setRegisterData({
+        username: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
       toast({
         title: "Registration failed",
-        description: "There was an error creating your account.",
+        description: error.response?.data?.message || "There was an error creating your account.",
         variant: "destructive",
       });
       console.error("Registration error:", error);
@@ -142,7 +158,17 @@ const LoginPage = () => {
                   </div>
                   
                   <Button type="submit" className="w-full" disabled={loginLoading}>
-                    {loginLoading ? "Signing in..." : "Sign In"}
+                    {loginLoading ? (
+                      <>
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Sign In
+                      </>
+                    )}
                   </Button>
                 </form>
               </Card>
@@ -199,7 +225,17 @@ const LoginPage = () => {
                   </div>
                   
                   <Button type="submit" className="w-full" disabled={registerLoading}>
-                    {registerLoading ? "Creating account..." : "Create Account"}
+                    {registerLoading ? (
+                      <>
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Create Account
+                      </>
+                    )}
                   </Button>
                 </form>
               </Card>
