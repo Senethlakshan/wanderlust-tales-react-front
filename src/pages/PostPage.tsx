@@ -1,18 +1,37 @@
+
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { PostAPI, Post } from "@/services/api";
-import { Heart, MessageSquare, Share2, Bookmark, Flag } from "lucide-react";
+import { PostAPI, BlogPostAPI, UserAPI, Post, AuthAPI } from "@/services/api";
+import { Heart, MessageSquare, Share2, Bookmark, Flag, Trash2, Edit, UserPlus, UserMinus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const PostPage = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  
   useEffect(() => {
+    // Get current user
+    setCurrentUser(AuthAPI.getCurrentUser());
+    
     const fetchPost = async () => {
       try {
         setLoading(true);
@@ -29,6 +48,112 @@ const PostPage = () => {
 
     fetchPost();
   }, [id]);
+
+  const handleLike = async () => {
+    if (!post) return;
+    if (!AuthAPI.isAuthenticated()) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to like posts.",
+      });
+      return;
+    }
+
+    try {
+      const updatedPost = await BlogPostAPI.like(post.id);
+      setPost(updatedPost);
+      
+      toast({
+        title: updatedPost.isLiked ? "Post Liked" : "Like Removed",
+        description: updatedPost.isLiked 
+          ? "You've liked this travel story" 
+          : "You've removed your like from this story",
+      });
+    } catch (error) {
+      console.error("Failed to like post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update like status",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleFollow = async () => {
+    if (!post) return;
+    if (!AuthAPI.isAuthenticated()) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to follow users.",
+      });
+      return;
+    }
+    
+    try {
+      if (isFollowing) {
+        await UserAPI.unfollowUser(post.author.id);
+        setIsFollowing(false);
+        toast({
+          title: "Unfollowed",
+          description: `You are no longer following ${post.author.name}`,
+        });
+      } else {
+        await UserAPI.followUser(post.author.id);
+        setIsFollowing(true);
+        toast({
+          title: "Following",
+          description: `You are now following ${post.author.name}`,
+        });
+      }
+      
+      // Update the author's followers count in the post
+      if (post) {
+        setPost({
+          ...post,
+          author: {
+            ...post.author,
+            followers: isFollowing 
+              ? post.author.followers - 1 
+              : post.author.followers + 1
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update follow status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update follow status",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleDelete = async () => {
+    if (!post) return;
+    if (!AuthAPI.isAuthenticated()) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to delete posts.",
+      });
+      return;
+    }
+    
+    try {
+      await BlogPostAPI.delete(post.id);
+      toast({
+        title: "Post Deleted",
+        description: "Your travel story has been deleted",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the post",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -57,6 +182,8 @@ const PostPage = () => {
       </div>
     );
   }
+
+  const isAuthor = currentUser?.id === post.author.id;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -93,6 +220,36 @@ const PostPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-8 space-y-8">
+              {/* Author actions */}
+              {isAuthor && (
+                <div className="flex justify-end gap-2 mb-4">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/edit-post/${post.id}`}>
+                      <Edit className="h-4 w-4 mr-1" /> Edit
+                    </Link>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 className="h-4 w-4 mr-1" /> Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this post? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            
               <div className="flex flex-wrap gap-2 mb-4">
                 <Link 
                   to={`/search?country=${post.country}`} 
@@ -121,8 +278,11 @@ const PostPage = () => {
               
               <div className="flex items-center justify-between pt-6 border-t">
                 <div className="flex items-center space-x-4">
-                  <button className="flex items-center space-x-1 text-muted-foreground hover:text-primary transition-colors">
-                    <Heart className="h-5 w-5" />
+                  <button 
+                    className={`flex items-center space-x-1 ${post.isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-primary'} transition-colors`}
+                    onClick={handleLike}
+                  >
+                    <Heart className={`h-5 w-5 ${post.isLiked ? 'fill-current' : ''}`} />
                     <span>{post.likes}</span>
                   </button>
                   <button className="flex items-center space-x-1 text-muted-foreground hover:text-primary transition-colors">
@@ -162,9 +322,26 @@ const PostPage = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Travel enthusiast exploring the world one adventure at a time.
                   </p>
-                  <Button asChild className="w-full">
-                    <Link to={`/profile/${post.author.id}`}>View Profile</Link>
-                  </Button>
+                  <div className="flex flex-col gap-3">
+                    {!isAuthor && (
+                      <Button onClick={handleFollow} variant={isFollowing ? "outline" : "default"}>
+                        {isFollowing ? (
+                          <>
+                            <UserMinus className="h-4 w-4 mr-2" />
+                            Unfollow
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Follow
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    <Button asChild variant="outline">
+                      <Link to={`/profile/${post.author.id}`}>View Profile</Link>
+                    </Button>
+                  </div>
                 </div>
                 
                 {post.relatedPosts && post.relatedPosts.length > 0 && (

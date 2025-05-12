@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 // API URL for the backend
@@ -62,6 +61,7 @@ export interface Post {
     imageUrl: string;
     createdAt: string;
   }[];
+  isLiked?: boolean;
 }
 
 export interface User {
@@ -81,6 +81,19 @@ export interface Country {
   currency: string;
   capital: string;
 }
+
+// Hardcoded demo user
+export const demoUser = {
+  id: "demo1",
+  username: "testuser",
+  name: "Test User",
+  email: "test@example.com",
+  password: "Password123",
+  avatar: "https://i.pravatar.cc/150?img=8",
+  bio: "Demo user for testing the TravelTales application",
+  following: 42,
+  followers: 128
+};
 
 // Mock data for development
 export const mockPosts: Post[] = [
@@ -273,6 +286,75 @@ export const mockCountries: Country[] = [
   }
 ];
 
+// Blog Post API Endpoints
+export const BlogPostAPI = {
+  getAll: async (): Promise<Post[]> => {
+    // For development, return mock data
+    return Promise.resolve(mockPosts);
+  },
+  
+  create: async (postData: Partial<Post>): Promise<Post> => {
+    // For demo, create a new post with the data provided
+    const newPost: Post = {
+      id: `new-${Date.now()}`,
+      title: postData.title || "New Travel Story",
+      content: postData.content || "Content of the new travel story...",
+      excerpt: postData.excerpt || "A short excerpt of the travel story",
+      imageUrl: postData.imageUrl || "https://images.unsplash.com/photo-1528127269322-539801943592",
+      country: postData.country || "Unknown",
+      author: demoUser,
+      likes: 0,
+      comments: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: postData.tags || ["travel", "new"],
+      isLiked: false
+    };
+    
+    // Add to mock posts for demo
+    mockPosts.unshift(newPost);
+    
+    return Promise.resolve(newPost);
+  },
+  
+  update: async (id: string, postData: Partial<Post>): Promise<Post> => {
+    // Find and update the post in mock data
+    const postIndex = mockPosts.findIndex(post => post.id === id);
+    if (postIndex === -1) return Promise.reject(new Error("Post not found"));
+    
+    mockPosts[postIndex] = {
+      ...mockPosts[postIndex],
+      ...postData,
+      updatedAt: new Date().toISOString()
+    };
+    
+    return Promise.resolve(mockPosts[postIndex]);
+  },
+  
+  delete: async (id: string): Promise<boolean> => {
+    // Remove from mock posts
+    const initialLength = mockPosts.length;
+    const filteredPosts = mockPosts.filter(post => post.id !== id);
+    
+    // Update the mock posts array
+    mockPosts.length = 0;
+    mockPosts.push(...filteredPosts);
+    
+    return Promise.resolve(initialLength > mockPosts.length);
+  },
+  
+  like: async (id: string): Promise<Post> => {
+    const post = mockPosts.find(post => post.id === id);
+    if (!post) return Promise.reject(new Error("Post not found"));
+    
+    // Toggle like status
+    post.isLiked = !post.isLiked;
+    post.likes = post.isLiked ? post.likes + 1 : post.likes - 1;
+    
+    return Promise.resolve(post);
+  }
+};
+
 // API endpoints for Posts
 export const PostAPI = {
   getAll: async (): Promise<Post[]> => {
@@ -323,14 +405,19 @@ export const CountryAPI = {
 export const AuthAPI = {
   login: async (email: string, password: string) => {
     try {
-      const response = await api.post("/users/login", { email, password });
-      const { token, user } = response.data;
-      
-      // Store token and user info in localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      
-      return { token, user };
+      // For demo, check against hardcoded credentials
+      if (email === demoUser.email && password === demoUser.password) {
+        // Create mock token
+        const token = "demo-token-" + Date.now();
+        
+        // Store token and user info in localStorage
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(demoUser));
+        
+        return { token, user: demoUser };
+      } else {
+        throw new Error("Invalid credentials");
+      }
     } catch (error) {
       console.error("Login error:", error);
       throw error;
@@ -339,8 +426,12 @@ export const AuthAPI = {
   
   register: async (username: string, email: string, password: string) => {
     try {
-      const response = await api.post("/users/register", { username, email, password });
-      return response.data;
+      // For demo, just pretend registration was successful if it matches demo user
+      if (email === demoUser.email && username === demoUser.username) {
+        return { success: true, message: "Registration successful" };
+      } else {
+        return { success: true, message: "Registration successful (demo)" };
+      }
     } catch (error) {
       console.error("Registration error:", error);
       throw error;
@@ -349,7 +440,7 @@ export const AuthAPI = {
   
   logout: async () => {
     try {
-      await api.post("/users/logout");
+      // For demo, just remove the token
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     } catch (error) {
@@ -365,6 +456,7 @@ export const AuthAPI = {
     if (userJson) {
       return JSON.parse(userJson);
     }
+    // For demo, return demo user if logged in
     return null;
   },
   
@@ -386,6 +478,34 @@ export const UserAPI = {
   getUserPosts: async (userId: string): Promise<Post[]> => {
     const posts = mockPosts.filter(post => post.author.id === userId);
     return Promise.resolve(posts);
+  },
+  
+  followUser: async (userId: string): Promise<User> => {
+    // For demo, just return the user with updated follower count
+    const user = mockPosts.find(post => post.author.id === userId)?.author;
+    if (!user) {
+      return Promise.reject(new Error("User not found"));
+    }
+    
+    // Update follower count for demo
+    user.followers++;
+    
+    return Promise.resolve(user);
+  },
+  
+  unfollowUser: async (userId: string): Promise<User> => {
+    // For demo, just return the user with updated follower count
+    const user = mockPosts.find(post => post.author.id === userId)?.author;
+    if (!user) {
+      return Promise.reject(new Error("User not found"));
+    }
+    
+    // Update follower count for demo
+    if (user.followers > 0) {
+      user.followers--;
+    }
+    
+    return Promise.resolve(user);
   }
 };
 

@@ -10,6 +10,7 @@ import LoginPage from "./pages/LoginPage";
 import PostPage from "./pages/PostPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
+import CreatePostPage from "./pages/CreatePostPage";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/post/:id" element={<PostPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/:id" element={<ProfilePage />} />
+          <Route path="/create-post" element={<CreatePostPage />} /> {/* New route */}
           <Route path="/terms" element={<NotFound />} />
           <Route path="/privacy" element={<NotFound />} />
           <Route path="/countries" element={<SearchPage />} />

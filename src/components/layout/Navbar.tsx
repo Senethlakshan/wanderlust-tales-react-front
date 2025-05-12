@@ -11,7 +11,7 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
-import { Search, Globe, User, LogOut } from "lucide-react";
+import { Search, Globe, User, LogOut, Plus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { AuthAPI } from "@/services/api";
@@ -58,6 +58,21 @@ export const Navbar = () => {
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
+    }
+  };
+
+  const handleLoginDemo = async () => {
+    try {
+      await AuthAPI.login("test@example.com", "Password123");
+      setIsAuthenticated(true);
+      setCurrentUser(AuthAPI.getCurrentUser());
+      toast({
+        title: "Logged in successfully",
+        description: "You're logged in as the demo user",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Login error:", error);
     }
   };
 
@@ -114,6 +129,18 @@ export const Navbar = () => {
                 </ul>
               </NavigationMenuContent>
             </NavigationMenuItem>
+            {isAuthenticated && (
+              <NavigationMenuItem>
+                <Link to="/create-post">
+                  <NavigationMenuLink className={cn(
+                    "inline-flex items-center justify-center px-4 py-2 text-sm font-medium",
+                    "hover:text-primary transition-colors"
+                  )}>
+                    <Plus className="mr-1 h-4 w-4" /> Create Post
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            )}
           </NavigationMenuList>
         </NavigationMenu>
 
@@ -123,29 +150,45 @@ export const Navbar = () => {
           </Button>
           
           {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Avatar className="cursor-pointer">
-                  <AvatarImage src={currentUser?.avatar || "https://github.com/shadcn.png"} alt={currentUser?.username || "User"} />
-                  <AvatarFallback>{currentUser?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <Button variant="outline" size="sm" asChild className="hidden md:flex">
+                <Link to="/create-post">
+                  <Plus className="mr-1 h-4 w-4" /> New Story
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="cursor-pointer">
+                    <AvatarImage src={currentUser?.avatar || "https://github.com/shadcn.png"} alt={currentUser?.username || "User"} />
+                    <AvatarFallback>{currentUser?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/create-post" className="cursor-pointer md:hidden">
+                      <Plus className="mr-2 h-4 w-4" />
+                      <span>Create Post</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
             <div className="hidden md:flex gap-2">
+              <Button variant="ghost" onClick={handleLoginDemo}>
+                Demo Login
+              </Button>
               <Button variant="ghost" asChild>
                 <Link to="/login">Login</Link>
               </Button>
@@ -187,12 +230,19 @@ export const Navbar = () => {
                 <Link to="/search" className="py-2 hover:text-primary transition-colors">Countries</Link>
                 {!isAuthenticated ? (
                   <>
+                    <button onClick={handleLoginDemo} className="text-left py-2 hover:text-primary transition-colors">
+                      Demo Login
+                    </button>
                     <Link to="/login" className="py-2 hover:text-primary transition-colors">Login</Link>
                     <Link to="/register" className="py-2 hover:text-primary transition-colors">Register</Link>
                   </>
                 ) : (
                   <>
                     <Link to="/profile" className="py-2 hover:text-primary transition-colors">Profile</Link>
+                    <Link to="/create-post" className="py-2 hover:text-primary transition-colors flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create Post
+                    </Link>
                     <button 
                       onClick={handleLogout}
                       className="py-2 text-left text-destructive hover:text-destructive/80 transition-colors flex items-center gap-2"
