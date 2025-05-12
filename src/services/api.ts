@@ -1,4 +1,3 @@
-
 import axios from "axios";
 
 // We'll use a mock API URL for now, to be replaced with the actual backend URL
@@ -54,6 +53,13 @@ export interface Post {
   comments: number;
   createdAt: string;
   updatedAt: string;
+  tags?: string[];
+  relatedPosts?: {
+    id: string;
+    title: string;
+    imageUrl: string;
+    createdAt: string;
+  }[];
 }
 
 export interface User {
@@ -95,6 +101,21 @@ export const mockPosts: Post[] = [
     comments: 42,
     createdAt: "2023-11-05T14:48:00.000Z",
     updatedAt: "2023-11-05T14:48:00.000Z",
+    tags: ["temples", "culture", "history"],
+    relatedPosts: [
+      {
+        id: "3",
+        title: "Venice Canals: A Floating Dream",
+        imageUrl: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9",
+        createdAt: "2023-09-14T16:30:00.000Z"
+      },
+      {
+        id: "6",
+        title: "Northern Lights in Iceland",
+        imageUrl: "https://images.unsplash.com/photo-1484950763426-56b5bf172dbb",
+        createdAt: "2023-11-29T22:10:00.000Z"
+      }
+    ]
   },
   {
     id: "2",
