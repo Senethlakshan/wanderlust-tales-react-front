@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
@@ -7,7 +6,7 @@ import { PostCard } from "@/components/posts/PostCard";
 import { CountrySelector } from "@/components/countries/CountrySelector";
 import { Button } from "@/components/ui/button";
 import { PostAPI, Post, CountryAPI, Country } from "@/services/api";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Heart, MessageCircle } from "lucide-react";
 
 const Index = () => {
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);

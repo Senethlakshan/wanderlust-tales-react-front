@@ -129,7 +129,7 @@ export const Navbar = () => {
                 </Link>
                 <Link to="/" className="py-2 hover:text-primary transition-colors">Home</Link>
                 <Link to="/search" className="py-2 hover:text-primary transition-colors">Explore</Link>
-                <Link to="/countries" className="py-2 hover:text-primary transition-colors">Countries</Link>
+                <Link to="/search" className="py-2 hover:text-primary transition-colors">Countries</Link>
                 {!isAuthenticated && (
                   <>
                     <Link to="/login" className="py-2 hover:text-primary transition-colors">Login</Link>
